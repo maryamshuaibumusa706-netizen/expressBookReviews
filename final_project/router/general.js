@@ -3,7 +3,6 @@ let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
-const axios = require('axios').default;
 
 public_users.post("/register", (req,res) => {
   const username = req.body.username;
@@ -58,57 +57,63 @@ public_users.get('/review/:isbn',function (req, res) {
   res.send(books[isbn].reviews)
 });
 
-// Task 10 - Async Promise
-public_users.get('/async/books',function (req, res) {
-  let myPromise = new Promise((resolve,reject)=>{
-    resolve(books);
-  })
-  myPromise.then((result)=>{
-    res.send(JSON.stringify(result,null,4));
-  })
-});
-
-// Task 11 - Async ISBN with Promise
-public_users.get('/async/isbn/:isbn',function (req, res) {
-  const isbn = req.params.isbn;
-  let myPromise = new Promise((resolve,reject)=>{
-    if(books[isbn]){
-      resolve(books[isbn]);
-    }else{
-      reject({message:"ISBN not found"});
-    }
-  })
-  myPromise.then((result)=>{res.send(result)}).catch((err)=>{res.send(err)})
-});
-
-// Task 12 - Async Author
-public_users.get('/async/author/:author',function (req, res) {
-  const author = req.params.author;
-  let myPromise = new Promise((resolve,reject)=>{
-    let ans = []
-    for(const [isbn, book] of Object.entries(books)){
-      if(book.author === author){
-        ans.push(book);
+// Task 10 - Get all books using async callback
+public_users.get('/books',function (req, res) {
+    const get_books = new Promise((resolve, reject) => {
+      resolve(books);
+    });
+    get_books.then((result)=>res.send(JSON.stringify(result,null,4)))
+  });
+  
+  // Task 11 - Get book by ISBN using Promise
+  public_users.get('/isbn/:isbn',function (req, res) {
+    const isbn = req.params.isbn;
+    const get_book = new Promise((resolve,reject)=>{
+      if(books[isbn]){
+          resolve(books[isbn]);
+      } else {
+          reject({message:"ISBN not found"});
       }
-    }
-    resolve(ans);
-  })
-  myPromise.then((result)=>{res.send(JSON.stringify(result,null,4))})
-});
-
-// Task 13 - Async Title
-public_users.get('/async/title/:title',function (req, res) {
-  const title = req.params.title;
-  let myPromise = new Promise((resolve,reject)=>{
-    let ans = []
-    for(const [isbn, book] of Object.entries(books)){
-      if(book.title === title){
-        ans.push(book);
+    });
+    get_book.then((result)=>res.send(result)).catch((err)=>res.send(err))
+  });
+  
+  // Task 12 - Get book by Author
+  public_users.get('/author/:author',function (req, res) {
+    const author = req.params.author;
+    const get_author = new Promise((resolve,reject)=>{
+      let filtered = [];
+      for(let i in books){
+          if(books[i].author === author){
+              filtered.push(books[i]);
+          }
       }
-    }
-    resolve(ans);
-  })
-  myPromise.then((result)=>{res.send(JSON.stringify(result,null,4))})
-});
+      if(filtered.length>0){
+          resolve(filtered);
+      } else {
+          reject({message:"Author not found"});
+      }
+    });
+    get_author.then((result)=>res.send(JSON.stringify(result,null,4))).catch((err)=>res.send(err))
+  });
+  
+  // Task 13 - Get book by Title
+  public_users.get('/title/:title',function (req, res) {
+    const title = req.params.title;
+    const get_title = new Promise((resolve,reject)=>{
+      let filtered = [];
+      for(let i in books){
+          if(books[i].title === title){
+              filtered.push(books[i]);
+          }
+      }
+      if(filtered.length>0){
+          resolve(filtered);
+      } else {
+          reject({message:"Title not found"});
+      }
+    });
+    get_title.then((result)=>res.send(JSON.stringify(result,null,4))).catch((err)=>res.send(err))
+  });
 
 module.exports.general = public_users;
